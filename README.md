@@ -145,7 +145,7 @@ All evaluations are handled in `ensemble_validation.ipynb`.
 
 ## License
 
-This project is released under the MIT License.
+This project is released under the [MIT License](./LICENSE).
 
 ---
 
