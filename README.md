@@ -143,14 +143,14 @@ All evaluations are handled in `ensemble_validation.ipynb`.
 
 ---
 
-## 🔗 App Integration
+## App Integration
 
 This model is used in a full-stack mobile app built with Flutter and FastAPI:  
 **[Skin Cancer Detection App](https://github.com/erenisci/skin-cancer-detection-app)**
 
 ---
 
-## 👥 Contributors
+## Contributors
 
 - [@erenisci](https://github.com/erenisci)
 - [@zscengiz](https://github.com/zscengiz)
