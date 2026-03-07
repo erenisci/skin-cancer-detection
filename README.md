@@ -1,7 +1,7 @@
 # Skin Cancer Detection via Ensemble Deep Learning
 
-This project introduces a **research-oriented deep learning pipeline** designed for the automated classification of skin lesions.  
-Rather than relying on conventional single-stage classifiers, it explores a **multi-stage ensemble approach** that mirrors a structured, diagnostic reasoning process similar to how a clinician might evaluate a lesion.  
+This project introduces a **research-oriented deep learning pipeline** designed for the automated classification of skin lesions.
+Rather than relying on conventional single-stage classifiers, it explores a **multi-stage ensemble approach** that mirrors a structured, diagnostic reasoning process similar to how a clinician might evaluate a lesion.
 The system integrates pretrained convolutional neural networks (CNNs) and weighted ensemble strategies to differentiate between melanoma, nevus, benign vs malignant lesions, and their respective subtypes.
 
 This work is part of an ongoing research effort in medical image analysis and aims to support the early and reliable detection of skin cancer through AI-assisted diagnostic systems.
@@ -26,28 +26,158 @@ Key objectives:
 
 ---
 
+## Skin Lesion Classes
+
+The pipeline classifies skin lesions into **7 diagnostic categories** derived from the ISIC dataset:
+
+| Label   | Full Name                                     | Type      |
+| ------- | --------------------------------------------- | --------- |
+| `mel`   | Melanoma                                      | Malignant |
+| `nv`    | Melanocytic Nevus                             | Benign    |
+| `akiec` | Actinic Keratosis / Intraepithelial Carcinoma | Malignant |
+| `bcc`   | Basal Cell Carcinoma                          | Malignant |
+| `bkl`   | Benign Keratosis-like Lesions                 | Benign    |
+| `df`    | Dermatofibroma                                | Benign    |
+| `vasc`  | Vascular Lesions                              | Benign    |
+
+---
+
 ## Multi-Stage Classification Pipeline
 
-The ensemble pipeline performs **five sequential classification tasks**:
+The ensemble pipeline performs **five sequential classification tasks**, routing each image through a hierarchical decision tree:
 
-1. **Melanoma Classification**  
-   → Binary classification to detect melanoma.
+```
+Input Image
+     │
+     ▼
+┌─────────────────┐
+│  Stage 0        │  Melanoma?  ──── Yes ──→  mel
+│  Melanoma Cls.  │
+└────────┬────────┘
+         │ No
+         ▼
+┌─────────────────┐
+│  Stage 1        │  Nevus?  ──────── Yes ──→  nv
+│  Nevus Cls.     │
+└────────┬────────┘
+         │ No
+         ▼
+┌─────────────────┐
+│  Stage 2        │  Benign or Malignant?
+│  Binary Cls.    │
+└────────┬────────┘
+         │
+    ┌────┴────┐
+    │         │
+    ▼         ▼
+ Benign   Malignant
+    │         │
+    ▼         ▼
+Stage 3    Stage 4
+Benign     Malignant
+Subtype    Subtype
+    │         │
+┌───┴───┐  ┌──┴───┐
+│       │  │      │
+▼       ▼  ▼      ▼
+bkl    df  akiec  bcc
+vasc
+```
 
-2. **Nevus Classification**  
-   → Binary classification to detect nevus when melanoma is not detected.
+**Stages at a glance:**
 
-3. **Benign vs Malignant Classification**  
-   → Binary classification for remaining undecided cases.
-
-4. **Malignant Subtype Classification**  
-   → Multi-class classification between `akiec` and `bcc`.
-
-5. **Benign Subtype Classification**  
-   → Multi-class classification between `bkl`, `df`, and `vasc`.
+1. **Melanoma Classification** — Binary: detects melanoma (`mel`).
+2. **Nevus Classification** — Binary: detects nevus (`nv`) when melanoma is not found.
+3. **Benign vs Malignant Classification** — Binary: routes remaining cases.
+4. **Malignant Subtype Classification** — Multi-class: `akiec` or `bcc`.
+5. **Benign Subtype Classification** — Multi-class: `bkl`, `df`, or `vasc`.
 
 Each stage uses an ensemble of three deep learning models (Xception, DenseNet121, CNN) with weighted soft voting.
 
 > The entire pipeline has been developed and tested on **Google Colab**, utilizing Google Drive for model and data storage.
+
+---
+
+## Ensemble Weights
+
+Each classification stage uses a soft-voting ensemble with stage-specific optimized weights:
+
+| Stage                   | Xception | DenseNet121 | CNN  |
+| ----------------------- | -------- | ----------- | ---- |
+| Melanoma Classification | 0.40     | 0.30        | 0.30 |
+| Nevus Classification    | 0.35     | 0.55        | 0.10 |
+| Benign vs Malignant     | 0.30     | 0.30        | 0.40 |
+| Malignant Subtype       | 0.20     | 0.40        | 0.40 |
+| Benign Subtype          | 0.20     | 0.60        | 0.20 |
+
+**Model Backbones:**
+
+- **Xception** — Depthwise separable convolutions, pretrained on ImageNet
+- **DenseNet121** — Dense connections for feature reuse, pretrained on ImageNet
+- **Custom CNN** — Lightweight architecture trained from scratch
+
+**Activation Functions:**
+
+- Sigmoid for binary classification outputs
+- Softmax for multi-class subtype outputs
+
+---
+
+## Getting Started
+
+### Requirements
+
+```bash
+pip install tensorflow numpy pandas scikit-learn pillow tqdm
+```
+
+- Python 3.10+
+- TensorFlow 2.x / Keras
+
+### Running the Pipeline
+
+1. Download or train the model files and place them in the `models/` directory (see structure below).
+2. Run the ensemble pipeline on a single image:
+
+```python
+from ensemble_pipeline import classify_image
+
+result = classify_image("path/to/skin_lesion.jpg")
+print(result)
+# Output: {'predicted_class': 'mel', 'confidence': 0.87, ...}
+```
+
+3. For full evaluation on a test set, open and run `ensemble_validation.ipynb` in Google Colab.
+
+> **Note:** Model training notebooks (`*_ensemble.ipynb`) are designed to run on **Google Colab** with Google Drive mounted for data and model storage.
+
+---
+
+## Data Preparation
+
+### Datasets
+
+This project uses the **ISIC dataset** (International Skin Imaging Collaboration):
+
+- [ISIC 2018](https://challenge.isic-archive.com/landing/2018/) — HAM10000 dataset, 10,000+ images, 7 classes
+- [ISIC 2019](https://challenge.isic-archive.com/landing/2019/) — 25,000+ images, 8 classes
+- [ISIC 2020](https://challenge.isic-archive.com/landing/2020/) — 33,000+ images, melanoma focus
+
+Download the datasets and place them under `data/ISIC_2018/`, `data/ISIC_2019/`, `data/ISIC_2020/`.
+
+### Preprocessing Scripts
+
+After downloading the raw datasets, use the helper scripts to prepare data for each classification stage:
+
+```bash
+# 1. Resize all images to 512x512 for uniform storage
+python scripts/resize_images.py
+
+# 2. Copy and organize images by classification task
+python scripts/copy_files.py
+```
+
+See `data/README.md` for detailed folder structure and CSV format.
 
 ---
 
@@ -103,31 +233,17 @@ SKIN-CANCER-DETECTION/
 └── README.md                          # This file
 ```
 
+---
+
 ## Technologies Used
 
 - Python 3.10+
 - TensorFlow / Keras
 - NumPy, Pandas
 - Scikit-learn
+- Pillow, tqdm
 - Google Colab & Google Drive
 - ISIC Dataset (2018, 2019, 2020)
-
----
-
-## Model Ensemble Strategy
-
-Each classification stage uses a soft-voting ensemble with fixed or grid-optimized weights:
-
-**Model Backbones:**
-
-- Xception
-- DenseNet121
-- Custom CNN
-
-**Activation Functions:**
-
-- Sigmoid for binary outputs
-- Softmax for multi-class subtypes
 
 ---
 
@@ -145,7 +261,7 @@ All evaluations are handled in `ensemble_validation.ipynb`.
 
 ## App Integration
 
-This model is used in a full-stack mobile app built with Flutter and FastAPI:  
+This model is used in a full-stack mobile app built with Flutter and FastAPI:
 **[Skin Cancer Detection App](https://github.com/erenisci/skin-cancer-detection-app)**
 
 ---
@@ -166,5 +282,5 @@ This project is released under the [MIT License](./LICENSE).
 
 ## Citation
 
-If you use this project in a scientific publication, please consider citing it.  
+If you use this project in a scientific publication, please consider citing it.
 BibTeX entry will be added upon publication.
