@@ -89,8 +89,8 @@ vasc
 1. **Melanoma Classification** — Binary: detects melanoma (`mel`).
 2. **Nevus Classification** — Binary: detects nevus (`nv`) when melanoma is not found.
 3. **Benign vs Malignant Classification** — Binary: routes remaining cases.
-4. **Malignant Subtype Classification** — Multi-class: `akiec` or `bcc`.
-5. **Benign Subtype Classification** — Multi-class: `bkl`, `df`, or `vasc`.
+4. **Benign Subtype Classification** — Multi-class: `bkl`, `df`, or `vasc`.
+5. **Malignant Subtype Classification** — Multi-class: `akiec` or `bcc`.
 
 Each stage uses an ensemble of three deep learning models (Xception, DenseNet121, CNN) with weighted soft voting.
 
@@ -223,7 +223,7 @@ SKIN-CANCER-DETECTION/
 │
 ├── scripts/                           # Helper scripts and main pipeline
 │   ├── copy_files.py                  # File mover by class or split
-│   ├── resize_images.py               # Resize utility for datasets
+│   └── resize_images.py               # Resize utility for datasets
 │
 ├── data_exploration.ipynb             # Dataset stats & cleaning
 ├── ensemble_pipeline.py               # Final ensemble classification pipeline
